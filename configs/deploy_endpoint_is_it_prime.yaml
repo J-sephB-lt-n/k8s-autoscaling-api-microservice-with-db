@@ -1,0 +1,36 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: endpoint-is-it-prime-deployment
+  labels:
+    app: endpoint-is-it-prime
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: endpoint-is-it-prime
+  template:
+    metadata:
+      labels:
+        app: endpoint-is-it-prime
+    spec:
+      containers:
+        - name: endpoint-is-it-prime
+          image: endpoint_is_it_prime
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: endpoint-is-it-prime-service
+spec:
+  ports:
+  - port: 5000
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    app: endpoint-is-it-prime
+  type: LoadBalancer

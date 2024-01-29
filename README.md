@@ -22,3 +22,7 @@ Project goals:
 * Make a monitoring dashboard for the cluster (probably using [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus))
 
 * Load/stress-test the system and see what happens (probably using locust, or maybe [oha](https://github.com/hatoo/oha))
+
+```bash
+docker build . -t endpoint_is_it_prime -f endpoint_is_it_prime/Dockerfile   
+```
