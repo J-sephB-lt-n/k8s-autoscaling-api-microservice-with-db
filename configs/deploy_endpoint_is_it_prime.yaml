@@ -20,7 +20,7 @@ spec:
           image: endpoint_is_it_prime
           imagePullPolicy: Never
           ports:
-            - containerPort: 5000
+            - containerPort: 5000 # container inside pod listens for traffic on this port
 ---
 apiVersion: v1
 kind: Service
@@ -28,9 +28,9 @@ metadata:
   name: endpoint-is-it-prime-service
 spec:
   ports:
-  - port: 5000
+  - port: 5000 # service listens for incoming traffic on this port 
     protocol: TCP
-    targetPort: 5000
+    targetPort: 5000 # the pod is listening on this port (service sends incoming traffic to this port)
   selector:
     app: endpoint-is-it-prime
   type: LoadBalancer
