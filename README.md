@@ -24,5 +24,12 @@ Project goals:
 * Load/stress-test the system and see what happens (probably using locust, or maybe [oha](https://github.com/hatoo/oha))
 
 ```bash
-docker build . -t endpoint_is_it_prime -f endpoint_is_it_prime/Dockerfile   
+cd endpoint_is_it_prime/
+docker build -t endpoint_is_it_prime .   
+```
+The image can be tested locally like this (the Flask app is accessed at http://localhost:5000/):
+```bash
+docker run --name flask_docker_test -d -p 5000:5000 endpoint_is_it_prime
+docker stop flask_docker_test 
+docker rm flask_docker_test
 ```
