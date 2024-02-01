@@ -39,6 +39,9 @@ The image can be tested locally like this (the Flask app is accessed at http://l
 ~$ docker stop flask_docker_test 
 ~$ docker rm flask_docker_test
 ```
+
+Make local docker image available in minikube cluster:
+
 ```bash
 ~$ minikube image load endpoint_is_it_prime
 ```
@@ -47,6 +50,23 @@ The image can be tested locally like this (the Flask app is accessed at http://l
 ~$ kubectl apply -f configs/deploy_endpoint_is_it_prime.yaml
 ```
 
+set up kube-prometheus-stack for cluster monitoring:
+```bash
+# https://dev.to/thenjdevopsguy/how-to-configure-kube-prometheus-4njh 
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install kube-prometheus prometheus-community/kube-prometheus-stack
+```
+to view the cluster monitoring grafana dashboard:
+```bash
+~$ kubectl port-forward svc/kube-prometheus-grafana :80 # then visit the IP address shown in your browser
+# by default, username=admin password=prom-operator
+```
+
+```bash
+# https://cloudnative-pg.io
+~$ 
+```
 
 ```bash
 ~$ minikube service endpoint-is-it-prime-service
