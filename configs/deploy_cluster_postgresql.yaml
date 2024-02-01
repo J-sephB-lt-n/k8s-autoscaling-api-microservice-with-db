@@ -1,0 +1,14 @@
+# deploy PostgreSQL cluster
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-cluster
+spec:
+  # imageName: ghcr.io/cloudnative-pg/postgresql:13.6 # to install a specific version
+  instances: 3
+  primaryUpdateStrategy: unsupervised
+  # Require 1Gi of space
+  storage:
+    size: 1Gi
+  monitoring:
+    enablePodMonitor: true
