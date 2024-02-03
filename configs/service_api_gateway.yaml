@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: api-gateway-service 
+  name: service-api-gateway
 spec:
   type: LoadBalancer
   selector: 

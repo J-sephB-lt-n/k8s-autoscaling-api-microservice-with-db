@@ -25,27 +25,40 @@ Project goals:
 
 
 Start [minikube](https://github.com/kubernetes/minikube) cluster:
+
+```bash
+cd api_gateway 
+docker build -t api_gateway:0.0.2 .
+cd .. 
+cd endpoints/postgresql_interface 
+docker build -t postgresql_interface:0.0.2 . 
+cd ../..
+docker images
+```
+
 ```bash
 minikube start 
 kubectl get nodes
 ```
 
-```bash
-eval $(minikube docker-env)
-cd api_gateway &&
-docker build -t api_gateway . &&
-cd ..
-```
-
 Make local docker images available in minikube cluster:
 
 ```bash
-minikube image load api_gateway
+eval $(minikube docker-env)
+minikube image load api_gateway:0.0.2
+minikube image load postgresql_interface:0.0.2
 ```
 
 ```bash
-kubectl apply -f configs/deployment_api_gateway.yaml &&
+kubectl apply -f configs/deployment_api_gateway.yaml
 kubectl apply -f configs/service_api_gateway.yaml
+kubectl apply -f configs/deployment_endpoints_postgresql_interface.yaml
+kubectl apply -f configs/service_endpoints_postgresql_interface.yaml
+```
+
+You can enter a pod and play around inside it using:
+```bash
+kubectl exec <pod-name-here> -it -- /bin/bash 
 ```
 
 ```bash
