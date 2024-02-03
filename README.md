@@ -32,6 +32,27 @@ kubectl get nodes
 
 ```bash
 eval $(minikube docker-env)
+cd api_gateway &&
+docker build -t api_gateway . &&
+cd ..
+```
+
+Make local docker images available in minikube cluster:
+
+```bash
+minikube image load api_gateway
+```
+
+```bash
+kubectl apply -f configs/deployment_api_gateway.yaml &&
+kubectl apply -f configs/service_api_gateway.yaml
+```
+
+```bash
+minikube service api-gateway-service
+```
+
+```bash
 cd endpoint_is_it_prime/ &&
 docker build -t endpoint_is_it_prime . &&
 cd ..
@@ -43,11 +64,6 @@ The image can be tested locally like this (the Flask app is accessed at http://l
 ~$ docker rm flask_docker_test
 ```
 
-Make local docker image available in minikube cluster:
-
-```bash
-minikube image load endpoint_is_it_prime
-```
 
 ```bash
 kubectl apply -f configs/deploy_endpoint_is_it_prime.yaml
@@ -89,9 +105,6 @@ kubectl exec postgresql-cluster-1 -- psql -d testdb -c "INSERT INTO users (name,
 kubectl exec postgresql-cluster-1 -- psql -d testdb -c "SELECT * FROM users WHERE age=69;"
 ```
 
-```bash
-minikube service endpoint-is-it-prime-service
-```
 
 ```bash
 minikube stop

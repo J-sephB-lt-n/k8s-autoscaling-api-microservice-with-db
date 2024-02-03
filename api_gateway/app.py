@@ -26,6 +26,10 @@ logger = logging.getLogger(__name__)
 # initialize Flask app #
 app = flask.Flask(__name__)
 
+@app.route("/endpoint_health_check", methods=["GET"])
+def endpoint_health_check():
+    return flask.Response("working as expected", status=200)
+
 @app.route("/<path:requested_path>", methods=["GET", "OPTIONS", "POST"])
 def forward_request(requested_path: str):
     """Forwards the client request to the requested endpoint, and
