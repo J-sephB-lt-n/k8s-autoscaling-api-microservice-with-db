@@ -23,16 +23,18 @@ Project goals:
 
 * Load/stress-test the system and see what happens (probably using locust, or maybe [oha](https://github.com/hatoo/oha))
 
-
 Start [minikube](https://github.com/kubernetes/minikube) cluster:
 
 ```bash
-cd api_gateway 
-docker build -t api_gateway:0.0.2 .
-cd .. 
-cd endpoints/postgresql_interface 
-docker build -t postgresql_interface:0.0.2 . 
-cd ../..
+cd api_gateway &&
+docker build -t api_gateway:0.0.3 . &&
+cd .. &&
+cd endpoints/postgresql_interface &&
+docker build -t postgresql_interface:0.0.2 . &&
+cd .. &&
+cd is_it_prime &&
+docker build -t is_it_prime:0.0.1 . &&
+cd ../.. &&
 docker images
 ```
 
@@ -44,16 +46,19 @@ kubectl get nodes
 Make local docker images available in minikube cluster:
 
 ```bash
-eval $(minikube docker-env)
-minikube image load api_gateway:0.0.2
-minikube image load postgresql_interface:0.0.2
+eval $(minikube docker-env) &&
+minikube image load api_gateway:0.0.3 &&
+minikube image load postgresql_interface:0.0.2 &&
+minikube image load is_it_prime:0.0.1
 ```
 
 ```bash
-kubectl apply -f configs/deployment_api_gateway.yaml
-kubectl apply -f configs/service_api_gateway.yaml
-kubectl apply -f configs/deployment_endpoints_postgresql_interface.yaml
-kubectl apply -f configs/service_endpoints_postgresql_interface.yaml
+kubectl apply -f configs/deployment_api_gateway.yaml &&
+kubectl apply -f configs/service_api_gateway.yaml &&
+kubectl apply -f configs/deployment_endpoints_postgresql_interface.yaml &&
+kubectl apply -f configs/service_endpoints_postgresql_interface.yaml &&
+kubectl apply -f configs/deployment_endpoints_is_it_prime.yaml &&
+kubectl apply -f configs/service_endpoints_is_it_prime.yaml
 ```
 
 You can enter a pod and play around inside it using:

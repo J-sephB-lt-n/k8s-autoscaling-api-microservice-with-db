@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deployment-api-gateway 
+  name: deployment-endpoints-is-it-prime
   labels:
-    app: api-gateway
+    app: is-it-prime
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
-      app: api-gateway
+      app: is-it-prime
   template:
     metadata:
       labels:
-        app: api-gateway
+        app: is-it-prime
     spec:
       containers:
-        - name: api-gateway
-          image: api_gateway:0.0.3
+        - name: is-it-prime
+          image: is_it_prime:0.0.1
           imagePullPolicy: Never
           ports:
             - containerPort: 80
-              name: api-gateway-svc
+              name: is-it-prime-svc 
