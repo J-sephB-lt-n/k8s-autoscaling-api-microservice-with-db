@@ -8,5 +8,5 @@ spec:
     app: postgresql-interface
   ports:
   - protocol: TCP
-    port: 8081
+    port: 8080
     targetPort: postgresql-svc 
