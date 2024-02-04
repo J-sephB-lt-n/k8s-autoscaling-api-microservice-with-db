@@ -62,7 +62,7 @@ kubectl exec <pod-name-here> -it -- /bin/bash
 ```
 
 ```bash
-minikube service api-gateway-service
+minikube service service-api-gateway
 ```
 
 ```bash

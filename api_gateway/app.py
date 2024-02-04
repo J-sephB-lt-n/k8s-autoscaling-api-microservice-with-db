@@ -2,7 +2,7 @@
 Defines the API Gateway endpoint
 
 for local testing:
-    flask --app gateway run --port 5000
+    flask run --port 5000
 """
 
 # standard lib imports #
@@ -28,7 +28,7 @@ app = flask.Flask(__name__)
 
 @app.route("/endpoint_health_check", methods=["GET"])
 def endpoint_health_check():
-    return flask.Response("working as expected", status=200)
+    return flask.Response("API gateway working as expected", status=200)
 
 @app.route("/<path:requested_path>", methods=["GET", "OPTIONS", "POST"])
 def forward_request(requested_path: str):
