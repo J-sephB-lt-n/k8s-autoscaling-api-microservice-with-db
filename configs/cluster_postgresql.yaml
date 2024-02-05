@@ -1,0 +1,34 @@
+# deploy PostgreSQL cluster
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-cluster
+spec:
+  # imageName: ghcr.io/cloudnative-pg/postgresql:13.6 # to install a specific version
+  instances: 3
+  primaryUpdateStrategy: unsupervised
+  # Require 1Gi of space
+  storage:
+    size: 1Gi
+  monitoring:
+    enablePodMonitor: true
+  managed:
+    roles:
+      # https://cloudnative-pg.io/documentation/1.22/cloudnative-pg.v1/#postgresql-cnpg-io-v1-RoleConfiguration
+      - name: db_admin
+        comment: my comment here
+        ensure: present
+        passwordSecret: 
+          name: db-admin-secret 
+        connectionLimit: -1
+        disablePassword: false 
+        superuser: false 
+        inRoles:
+          # SELECT * FROM pg_roles;
+          - pg_read_all_data
+          - pg_write_all_data
+        createdb: true 
+        createrole: true 
+        login: true
+        replication: false
+        bypassrls: false
