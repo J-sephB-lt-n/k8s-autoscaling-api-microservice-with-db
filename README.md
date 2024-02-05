@@ -88,6 +88,17 @@ kubectl get cluster --watch
 kubectl get pod --watch
 ```
 
+```bash 
+kubectl exec postgresql-cluster-1 -it -- /bin/bash # enter the primary database node
+psql # interactive mode
+
+kubectl exec postgresql-cluster-1 -- psql -c "CREATE DATABASE testdb;"
+kubectl exec postgresql-cluster-1 -- psql -d testdb -c "CREATE SCHEMA testschema;"
+kubectl exec postgresql-cluster-1 -- psql -d testdb -c "CREATE TABLE testschema.users(name VARCHAR(99), age INT);"
+kubectl exec postgresql-cluster-1 -- psql -d testdb -c "INSERT INTO testschema.users (name, age) values ('joe', 69);"
+kubectl exec postgresql-cluster-1 -- psql -d testdb -c "SELECT * FROM testschema.users WHERE age=69;"
+```
+
 ```bash
 kubectl get pod
 kubectl exec <name of pod with python on it> -it -- /bin/bash
@@ -150,17 +161,6 @@ kubectl port-forward svc/kube-prometheus-grafana :80 # then visit the IP address
 ```
 
 
-```bash 
-kubectl exec postgresql-cluster-1 -it -- /bin/bash # enter the primary database node
-psql # interactive mode
-kubectl exec postgresql-cluster-1 -- psql -c "CREATE DATABASE testdb;"
-kubectl exec postgresql-cluster-1 -- psql -d testdb -c "CREATE SCHEMA testschema;"
-kubectl exec postgresql-cluster-1 -- psql -c "CREATE USER joe WITH PASSWORD 'password1234';"
-kubectl exec postgresql-cluster-1 -- psql -d testdb -c "GRANT SELECT ON ALL TABLES IN SCHEMA testschema TO joe;"
-kubectl exec postgresql-cluster-1 -- psql -d testdb -c "CREATE TABLE testschema.users(name VARCHAR(99), age INT);"
-kubectl exec postgresql-cluster-1 -- psql -d testdb -c "INSERT INTO testschema.users (name, age) values ('joe', 69);"
-kubectl exec postgresql-cluster-1 -- psql -d testdb -c "SELECT * FROM testschema.users WHERE age=69;"
-```
 
 
 ```bash
