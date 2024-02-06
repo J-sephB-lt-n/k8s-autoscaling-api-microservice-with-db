@@ -33,7 +33,7 @@ cd endpoints/postgresql_interface &&
 docker build -t postgresql_interface:0.0.2 . &&
 cd .. &&
 cd is_it_prime &&
-docker build -t is_it_prime:0.0.1 . &&
+docker build -t dev.local/is_it_prime:0.0.1 . &&
 cd ../.. &&
 docker images
 ```
@@ -49,7 +49,7 @@ Make local docker images available in minikube cluster:
 eval $(minikube docker-env) &&
 minikube image load api_gateway:0.0.3 &&
 minikube image load postgresql_interface:0.0.2 &&
-minikube image load is_it_prime:0.0.1
+minikube image load dev.local/is_it_prime:0.0.1
 ```
 
 ```bash
@@ -68,9 +68,50 @@ You can enter a pod and play around inside it using:
 ```bash
 kubectl exec <pod-name-here> -it -- /bin/bash 
 ```
-
+https://github.com/csantanapr/knative-minikube?tab=readme-ov-file
 ```bash
-minikube service service-api-gateway
+export KNATIVE_VERSION="1.13.1"
+# Install the required custom resources of Knative Serving
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v${KNATIVE_VERSION}/serving-crds.yaml
+kubectl wait --for=condition=Established --all crd
+
+# Install the core components of Knative Serving
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v${KNATIVE_VERSION}/serving-core.yaml
+kubectl wait pod --timeout=-1s --for=condition=Ready -l '!job-name' -n knative-serving
+
+# Install the Knative Kourier controller
+export KNATIVE_NET_KOURIER_VERSION="1.13.0"
+kubectl apply -f https://github.com/knative/net-kourier/releases/download/knative-v${KNATIVE_NET_KOURIER_VERSION}/kourier.yaml
+kubectl wait pod --timeout=-1s --for=condition=Ready -l '!job-name' -n kourier-system
+kubectl wait pod --timeout=-1s --for=condition=Ready -l '!job-name' -n knative-serving
+
+kubectl get pods --all-namespaces
+
+EXTERNAL_IP=$(kubectl -n kourier-system get service kourier -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+echo EXTERNAL_IP=$EXTERNAL_IP
+KNATIVE_DOMAIN="$EXTERNAL_IP.sslip.io"
+echo KNATIVE_DOMAIN=$KNATIVE_DOMAIN
+dig $KNATIVE_DOMAIN
+# configure DNS for Knative Serving
+kubectl patch configmap -n knative-serving config-domain -p "{\"data\": {\"$KNATIVE_DOMAIN\": \"\"}}"
+
+# Configure Knative Serving to use Kourier by default
+kubectl patch configmap/config-network \
+  --namespace knative-serving \
+  --type merge \
+  --patch '{"data":{"ingress.class":"kourier.ingress.networking.knative.dev"}}'
+
+kubectl get pods -n knative-serving
+kubectl get pods -n kourier-system
+kubectl get svc  -n kourier-system
+
+kubectl apply -f configs/knative_test.yaml
+kubectl wait ksvc ksvc-endpoint-is-it-prime --all --timeout=-1s --for=condition=Ready
+kubectl get ksvc
+
+SERVICE_URL=$(kubectl get ksvc ksvc-endpoint-is-it-prime -o jsonpath='{.status.url}')
+echo $SERVICE_URL
+curl "${SERVICE_URL}/is_it_prime?num=69"
 ```
 
 set up PostgreSQL operator:
@@ -130,15 +171,14 @@ with psycopg.connect("host='postgresql-cluster-rw.default.svc.cluster.local' por
 
 
 ```bash
-cd endpoint_is_it_prime/ &&
-docker build -t endpoint_is_it_prime . &&
-cd ..
+minikube service service-api-gateway
 ```
+
 The image can be tested locally like this (the Flask app is accessed at http://localhost:5000/):
 ```bash
-~$ docker run --name flask_docker_test -d -p 5000:5000 endpoint_is_it_prime
-~$ docker stop flask_docker_test 
-~$ docker rm flask_docker_test
+docker run --name flask_docker_test -d -p 5000:5000 endpoint_is_it_prime
+docker stop flask_docker_test 
+docker rm flask_docker_test
 ```
 
 
