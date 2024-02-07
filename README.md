@@ -27,7 +27,7 @@ Start [minikube](https://github.com/kubernetes/minikube) cluster:
 
 ```bash
 cd api_gateway &&
-docker build -t api_gateway:0.0.3 . &&
+docker build -t dev.local/api_gateway:0.0.1 . &&
 cd .. &&
 cd endpoints/postgresql_interface &&
 docker build -t postgresql_interface:0.0.2 . &&
@@ -47,7 +47,7 @@ Make local docker images available in minikube cluster:
 
 ```bash
 eval $(minikube docker-env) &&
-minikube image load api_gateway:0.0.3 &&
+minikube image load dev.local/api_gateway:0.0.1 &&
 minikube image load postgresql_interface:0.0.2 &&
 minikube image load dev.local/is_it_prime:0.0.1
 ```
@@ -87,6 +87,7 @@ kubectl wait pod --timeout=-1s --for=condition=Ready -l '!job-name' -n knative-s
 
 kubectl get pods --all-namespaces
 
+minikube tunnel # must be run in separate terminal window
 EXTERNAL_IP=$(kubectl -n kourier-system get service kourier -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 echo EXTERNAL_IP=$EXTERNAL_IP
 KNATIVE_DOMAIN="$EXTERNAL_IP.sslip.io"
@@ -105,12 +106,16 @@ kubectl get pods -n knative-serving
 kubectl get pods -n kourier-system
 kubectl get svc  -n kourier-system
 
-kubectl apply -f configs/knative_test.yaml
+kn service create ksvc-endpoint-is-it-prime --image dev.local/is_it_prime:0.0.1 --port 80
+# kubectl apply -f configs/knative_test.yaml
 kubectl wait ksvc ksvc-endpoint-is-it-prime --all --timeout=-1s --for=condition=Ready
 kubectl get ksvc
 
 SERVICE_URL=$(kubectl get ksvc ksvc-endpoint-is-it-prime -o jsonpath='{.status.url}')
-echo $SERVICE_URL
+echo SERVICE_URL=$SERVICE_URL
+curl "${SERVICE_URL}/is_it_prime?num=69"
+export KSVC_NAME=ksvc-endpoint-is-it-prime
+kubectl label kservice ${KSVC_NAME} networking.knative.dev/visibility=cluster-local
 curl "${SERVICE_URL}/is_it_prime?num=69"
 ```
 
