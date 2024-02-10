@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-endpoints-postgresql-interface
+  labels:
+    app: postgresql-interface
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postgresql-interface
+  template:
+    metadata:
+      labels:
+        app: postgresql-interface
+    spec:
+      containers:
+        - name: postgresql-interface
+          image: postgresql_interface:0.0.2
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+              name: postgresql-svc 

@@ -1,0 +1,13 @@
+# kn service create ksvc-endpoint-is-it-prime --image dev.local/is_it_prime:0.0.1 --port 80
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: ksvc-endpoint-is-it-prime
+spec:
+  template:
+    spec:
+      containers:
+        - image: dev.local/is_is_prime:0.0.1
+          imagePullPolicy: Never 
+          ports:
+            - containerPort: 80

@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-endpoints-is-it-prime
+  labels:
+    app: is-it-prime
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: is-it-prime
+  template:
+    metadata:
+      labels:
+        app: is-it-prime
+    spec:
+      containers:
+        - name: is-it-prime
+          image: is_it_prime:0.0.1
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+              name: is-it-prime-svc 
