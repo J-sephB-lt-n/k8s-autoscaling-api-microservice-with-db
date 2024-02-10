@@ -26,9 +26,18 @@ logger = logging.getLogger(__name__)
 # initialize Flask app #
 app = flask.Flask(__name__)
 
-@app.route("/endpoint_health_check", methods=["GET"])
+
+@app.route("/dev/endpoint_health_check", methods=["GET"])
 def endpoint_health_check():
+    """docstring TODO"""
     return flask.Response("API gateway working as expected", status=200)
+
+
+@app.route("/dev/validate_endpoint_routings", methods=["GET"])
+def validate_endpoint_routings():
+    """docstring TODO"""
+    return flask.Response(json.dumps(endpoint_routing, indent=4), status=200)
+
 
 @app.route("/<path:requested_path>", methods=["GET", "OPTIONS", "POST"])
 def forward_request(requested_path: str):
@@ -69,9 +78,9 @@ def forward_request(requested_path: str):
     }
     # if requested endpoint sets cookies, forward those headers on to the client #
     if endpoint_response.cookies:
-        endpoint_response_headers_to_return_to_client[
-            "Set-Cookie"
-        ] = endpoint_response.raw.headers.getlist("Set-Cookie")
+        endpoint_response_headers_to_return_to_client["Set-Cookie"] = (
+            endpoint_response.raw.headers.getlist("Set-Cookie")
+        )
 
     # return the response to the client #
     response = flask.Response(
@@ -81,6 +90,7 @@ def forward_request(requested_path: str):
     )
 
     return response
+
 
 @app.after_request
 def after_request(response):
