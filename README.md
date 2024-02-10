@@ -25,16 +25,3 @@ Project goals:
 
 Start [minikube](https://github.com/kubernetes/minikube) cluster:
 
-```bash
-cd api_gateway &&
-docker build -t dev.local/api_gateway:0.0.1 . &&
-cd .. &&
-cd endpoints/postgresql_interface &&
-docker build -t dev.local/postgresql_interface:0.0.2 . &&
-cd .. &&
-cd is_it_prime &&
-docker build -t dev.local/is_it_prime:0.0.1 . &&
-cd ../.. &&
-docker images
-```
-

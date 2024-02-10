@@ -1,0 +1,26 @@
+# kn service create ksvc-endpoint-is-it-prime --image dev.local/is_it_prime:0.0.1 --port 80
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: ksvc-api-gateway
+  namespace: default
+spec:
+  template:
+    spec:
+      containerConcurrency: 0
+      containers:
+      - image: dev.local/api_gateway:0.0.1
+        name: ksvc-api-gateway 
+        env:
+          - name: IS_IT_PRIME__V1
+            valueFrom:
+              configMapKeyRef:
+                name: configmap-gateway-endpoint-routing
+                key: is_it_prime__v1
+        ports:
+        - containerPort: 80
+          protocol: TCP
+      timeoutSeconds: 300
+  traffic:
+  - latestRevision: true
+    percent: 100

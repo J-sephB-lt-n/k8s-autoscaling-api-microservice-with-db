@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-gateway-endpoint-routing
+data:
+  is_it_prime__v1: "http://ksvc-endpoint-is-it-prime.default.svc.cluster.local/is_it_prime"
+  postgresql__query__v1: "http://ksvc-endpoint-postgresql-interface.default.svc.cluster.local/query"
