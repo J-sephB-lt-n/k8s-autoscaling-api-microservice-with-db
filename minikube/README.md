@@ -1,36 +1,13 @@
 # k8s-autoscaling-api-microservice-with-db
-description TODO
 
 THIS REPO IS STILL MASSIVELY UNDER CONSTRUCTION
-
-Project goals:
-
-* Host everything within a kubernetes cluster
-
-* Host PostGreSQL within the cluster (with an admin monitoring dashboard)
-
-    - is replicated and highly available
-
-    - has automated backup
-
-* Host an HTTP endpoint 
-    
-    - adds/removes nodes based on traffic volume
-    
-    - interacts with the SQL database
-
-* Make a monitoring dashboard for the cluster (probably using [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus))
-
-* Load/stress-test the system and see what happens (probably using locust, or maybe [oha](https://github.com/hatoo/oha))
-
-Start [minikube](https://github.com/kubernetes/minikube) cluster:
 
 ```bash
 cd api_gateway &&
 docker build -t dev.local/api_gateway:0.0.1 . &&
 cd .. &&
 cd endpoints/postgresql_interface &&
-docker build -t dev.local/postgresql_interface:0.0.2 . &&
+docker build -t dev.local/postgresql_interface:0.0.1 . &&
 cd .. &&
 cd is_it_prime &&
 docker build -t dev.local/is_it_prime:0.0.1 . &&
@@ -48,14 +25,14 @@ Make local docker images available in minikube cluster:
 ```bash
 eval $(minikube docker-env) &&
 minikube image load dev.local/api_gateway:0.0.1 &&
-minikube image load dev.local/postgresql_interface:0.0.2 &&
+minikube image load dev.local/postgresql_interface:0.0.1 &&
 minikube image load dev.local/is_it_prime:0.0.1
 ```
 
 ```bash
 kubectl apply -f configs/deployment_api_gateway.yaml &&
 kubectl apply -f configs/service_api_gateway.yaml &&
-kubectl apply -f configs/deployment_endpoints_postgresql_interface.yaml &&
+kubectl apply -f minikube/manifests/deployment_endpoints_postgresql_interface.yaml &&
 kubectl apply -f configs/service_endpoints_postgresql_interface.yaml &&
 kubectl apply -f configs/deployment_endpoints_is_it_prime.yaml &&
 kubectl apply -f configs/service_endpoints_is_it_prime.yaml
@@ -68,56 +45,6 @@ You can enter a pod and play around inside it using:
 ```bash
 kubectl exec <pod-name-here> -it -- /bin/bash 
 ```
-https://github.com/csantanapr/knative-minikube?tab=readme-ov-file
-```bash
-export KNATIVE_VERSION="1.13.1"
-# Install the required custom resources of Knative Serving
-kubectl apply -f "https://github.com/knative/serving/releases/download/knative-v${KNATIVE_VERSION}/serving-crds.yaml"
-kubectl wait --for=condition=Established --all crd
-
-# Install the core components of Knative Serving
-kubectl apply -f "https://github.com/knative/serving/releases/download/knative-v${KNATIVE_VERSION}/serving-core.yaml"
-kubectl wait pod --timeout=-1s --for=condition=Ready -l '!job-name' -n knative-serving
-
-# Install the Knative Kourier controller
-export KNATIVE_NET_KOURIER_VERSION="1.13.0"
-kubectl apply -f "https://github.com/knative/net-kourier/releases/download/knative-v${KNATIVE_NET_KOURIER_VERSION}/kourier.yaml"
-kubectl wait pod --timeout=-1s --for=condition=Ready -l '!job-name' -n kourier-system
-kubectl wait pod --timeout=-1s --for=condition=Ready -l '!job-name' -n knative-serving
-
-kubectl get pods --all-namespaces
-
-minikube tunnel # must be run in separate terminal window
-EXTERNAL_IP=$(kubectl -n kourier-system get service kourier -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-echo EXTERNAL_IP=$EXTERNAL_IP
-KNATIVE_DOMAIN="$EXTERNAL_IP.sslip.io"
-echo KNATIVE_DOMAIN=$KNATIVE_DOMAIN
-dig $KNATIVE_DOMAIN
-# configure DNS for Knative Serving
-kubectl patch configmap -n knative-serving config-domain -p "{\"data\": {\"$KNATIVE_DOMAIN\": \"\"}}"
-
-# Configure Knative Serving to use Kourier by default
-kubectl patch configmap/config-network \
-  --namespace knative-serving \
-  --type merge \
-  --patch '{"data":{"ingress.class":"kourier.ingress.networking.knative.dev"}}'
-
-kubectl get pods -n knative-serving
-kubectl get pods -n kourier-system
-kubectl get svc  -n kourier-system
-
-# kn service create ksvc-endpoint-is-it-prime --image dev.local/is_it_prime:0.0.1 --port 80
-kubectl apply -f configs/kservice_endpoints_is_it_prime.yaml
-kubectl wait ksvc ksvc-endpoint-is-it-prime --all --timeout=-1s --for=condition=Ready
-kubectl get ksvc
-
-SERVICE_URL=$(kubectl get ksvc ksvc-endpoint-is-it-prime -o jsonpath='{.status.url}')
-echo SERVICE_URL=$SERVICE_URL
-curl "${SERVICE_URL}/is_it_prime?num=69"
-export KSVC_NAME=ksvc-endpoint-is-it-prime
-kubectl label kservice ${KSVC_NAME} networking.knative.dev/visibility=cluster-local
-curl "${SERVICE_URL}/is_it_prime?num=69"
-```
 
 set up PostgreSQL operator:
 ```bash
@@ -128,10 +55,11 @@ helm upgrade --install cnpg \
   --create-namespace \
   cnpg/cloudnative-pg
 kubectl get deployments -n cnpg-system --watch
-kubectl apply -f configs/secret_postgresql_cluster.yaml
-kubectl apply -f configs/cluster_postgresql.yaml
+kubectl apply -f minikube/manifests/secret_postgresql_cluster.yaml
+kubectl apply -f minikube/manifests/cluster_postgresql.yaml
 kubectl get cluster --watch
 kubectl get pod --watch
+kubectl get service
 ```
 
 ```bash 
@@ -153,6 +81,91 @@ pip install "psycopg[binary]"
 ```
 ```python
 import psycopg
+from pprint import pprint
+
+with psycopg.connect("host='postgresql-cluster-rw.default.svc.cluster.local' port=5432 dbname='postgres' user='db_admin' password='password1234' connect_timeout=10", autocommit=True) as conn:
+  with conn.cursor() as cur:
+    cur.execute("""CREATE database testdb;""")
+    try:
+      results = cur.fetchall()
+    except psycopg.ProgrammingError:
+      results = None
+    pprint(results) 
+    print(cur.description)
+    print(cur.statusmessage)
+    print(cur.rowcount)
+
+with psycopg.connect("host='postgresql-cluster-rw.default.svc.cluster.local' port=5432 dbname='testdb' user='db_admin' password='password1234' connect_timeout=10", autocommit=True) as conn:
+  with conn.cursor() as cur:
+    cur.execute("""CREATE SCHEMA testschema;""")
+    try:
+      results = cur.fetchall()
+    except psycopg.ProgrammingError:
+      results = None
+    pprint(results) 
+    print(cur.description)
+    print(cur.statusmessage)
+    print(cur.rowcount)
+
+with psycopg.connect("host='postgresql-cluster-rw.default.svc.cluster.local' port=5432 dbname='testdb' user='db_admin' password='password1234' connect_timeout=10", autocommit=True) as conn:
+  with conn.cursor() as cur:
+    cur.execute("""
+      CREATE TABLE testschema.testtable (
+              id serial PRIMARY KEY,
+              num integer,
+              data text)
+            """)
+    try:
+      results = cur.fetchall()
+    except psycopg.ProgrammingError:
+      results = None
+    pprint(results) 
+    print(cur.description)
+    print(cur.statusmessage)
+    print(cur.rowcount)
+
+with psycopg.connect("host='postgresql-cluster-rw.default.svc.cluster.local' port=5432 dbname='testdb' user='db_admin' password='password1234' connect_timeout=10", autocommit=True) as conn:
+  with conn.cursor() as cur:
+    cur.execute("""INSERT INTO testschema.testtable (num, data) VALUES (69, 'penis')""")
+    try:
+      results = cur.fetchall()
+    except psycopg.ProgrammingError:
+      results = None
+    pprint(results) 
+    print(cur.description)
+    print(cur.statusmessage)
+    print(cur.rowcount)
+
+with psycopg.connect("host='postgresql-cluster-rw.default.svc.cluster.local' port=5432 dbname='testdb' user='db_admin' password='password1234' connect_timeout=10", autocommit=True) as conn:
+  with conn.cursor() as cur:
+    cur.execute("""INSERT INTO testschema.testtable (num, data) VALUES (420, 'dong')""")
+    try:
+      results = cur.fetchall()
+    except psycopg.ProgrammingError:
+      results = None
+    pprint(results) 
+    print(cur.description)
+    print(cur.statusmessage)
+    print(cur.rowcount)
+
+with psycopg.connect("host='postgresql-cluster-rw.default.svc.cluster.local' port=5432 dbname='testdb' user='db_admin' password='password1234' connect_timeout=10", autocommit=True) as conn:
+  with conn.cursor() as cur:
+    cur.execute("""SELECT * FROM testschema.testtable;""")
+    try:
+      results = cur.fetchall()
+    except psycopg.ProgrammingError:
+      results = None
+    test = {
+      "results": results,
+      "description": None if cur.description is None else [str(x) for x in cur.description],
+      "statusmessage": cur.statusmessage,
+      "rowcount": cur.rowcount
+    }
+
+
+
+
+
 with psycopg.connect("host='postgresql-cluster-rw.default.svc.cluster.local' port=5432 dbname='postgres' user='db_admin' password='password1234' connect_timeout=10", autocommit=True) as admin_conn:
   admin_conn.execute("""CREATE DATABASE testdb;""")
 with psycopg.connect("host='postgresql-cluster-rw.default.svc.cluster.local' port=5432 dbname='testdb' user='db_admin' password='password1234' connect_timeout=10", autocommit=True) as admin_conn:
