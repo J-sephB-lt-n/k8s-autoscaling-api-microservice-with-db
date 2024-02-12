@@ -65,22 +65,6 @@ kubectl patch configmap/config-network \
 kubectl get pods -n knative-serving
 kubectl get pods -n kourier-system
 kubectl get svc  -n kourier-system
-
-# kn service create ksvc-endpoint-is-it-prime --image dev.local/is_it_prime:0.0.1 --port 80
-kubectl apply -f api_gateway/manifests/configmap_endpoint_routing.yaml
-kubectl apply -f minikube_and_knative/manifests/kservice_endpoints_is_it_prime.yaml
-kubectl wait ksvc ksvc-endpoint-is-it-prime --all --timeout=-1s --for=condition=Ready
-kubectl label kservice ksvc-endpoint-is-it-prime networking.knative.dev/visibility=cluster-local
-kubectl apply -f minikube_and_knative/manifests/kservice_api_gateway.yaml
-kubectl wait ksvc ksvc-api-gateway --all --timeout=-1s --for=condition=Ready
-kubectl get ksvc
-
-
-GATEWAY_SERVICE_URL=$(kubectl get ksvc ksvc-api-gateway -o jsonpath='{.status.url}')
-echo GATEWAY_SERVICE_URL=$GATEWAY_SERVICE_URL
-curl "${GATEWAY_SERVICE_URL}/dev/endpoint_health_check"
-curl "${GATEWAY_SERVICE_URL}/dev/validate_endpoint_routings"
-curl "${GATEWAY_SERVICE_URL}/is_it_prime/v1?num=69"
 ```
 
 set up PostgreSQL operator:
@@ -92,11 +76,54 @@ helm upgrade --install cnpg \
   --create-namespace \
   cnpg/cloudnative-pg
 kubectl get deployments -n cnpg-system --watch
-kubectl apply -f configs/secret_postgresql_cluster.yaml
-kubectl apply -f configs/cluster_postgresql.yaml
+kubectl apply -f minikube_and_knative/manifests/secret_postgresql_cluster.yaml
+kubectl apply -f minikube_and_knative/manifests/cluster_postgresql.yaml
 kubectl get cluster --watch
 kubectl get pod --watch
+kubectl get service
 ```
+
+```bash
+# kn service create ksvc-endpoint-is-it-prime --image dev.local/is_it_prime:0.0.1 --port 80
+kubectl apply -f api_gateway/manifests/configmap_endpoint_routing.yaml
+kubectl apply -f minikube_and_knative/manifests/kservice_api_gateway.yaml
+kubectl wait ksvc ksvc-api-gateway --all --timeout=-1s --for=condition=Ready
+kubectl apply -f minikube_and_knative/manifests/kservice_endpoints_is_it_prime.yaml
+kubectl wait ksvc ksvc-endpoint-is-it-prime --all --timeout=-1s --for=condition=Ready
+kubectl label kservice ksvc-endpoint-is-it-prime networking.knative.dev/visibility=cluster-local
+kubectl apply -f minikube_and_knative/manifests/kservice_endpoints_postgresql_interface.yaml 
+kubectl wait ksvc ksvc-endpoint-postgresql-interface --all --timeout=-1s --for=condition=Ready
+kubectl label kservice ksvc-endpoint-postgresql-interface networking.knative.dev/visibility=cluster-local
+kubectl get ksvc
+
+GATEWAY_SERVICE_URL=$(kubectl get ksvc ksvc-api-gateway -o jsonpath='{.status.url}')
+echo GATEWAY_SERVICE_URL=$GATEWAY_SERVICE_URL
+curl "${GATEWAY_SERVICE_URL}/dev/endpoint_health_check"
+curl "${GATEWAY_SERVICE_URL}/dev/validate_endpoint_routings"
+curl "${GATEWAY_SERVICE_URL}/is_it_prime/v1?num=68999981"
+curl -X POST "${GATEWAY_SERVICE_URL}/postgresql/query/v1" -H "Content-Type: application/json" \
+  -d '{"db_name":"postgres", "query_string":"CREATE DATABASE testdb;"}'
+curl -X POST "${GATEWAY_SERVICE_URL}/postgresql/query/v1" -H "Content-Type: application/json" \
+  -d '{"db_name":"postgres", "query_string":"SELECT datname FROM pg_database;"}'
+curl -X POST "${GATEWAY_SERVICE_URL}/postgresql/query/v1" -H "Content-Type: application/json" \
+  -d '{"db_name":"testdb", "query_string":"CREATE SCHEMA testschema;"}'
+curl -X POST "${GATEWAY_SERVICE_URL}/postgresql/query/v1" -H "Content-Type: application/json" \
+  -d '{
+    "db_name":"testdb", 
+    "query_string":"CREATE TABLE testschema.testtable (id serial PRIMARY KEY,num integer,data text)"
+    }'
+curl -X POST "${GATEWAY_SERVICE_URL}/postgresql/query/v1" -H "Content-Type: application/json" \
+  -d "{
+    \"db_name\":\"testdb\", 
+    \"query_string\":\"INSERT INTO testschema.testtable (num, data) VALUES (69, 'test')\"
+    }"
+curl -X POST "${GATEWAY_SERVICE_URL}/postgresql/query/v1" -H "Content-Type: application/json" \
+  -d '{
+    "db_name":"testdb", 
+    "query_string":"SELECT * FROM testschema.testtable;"
+    }'
+```
+
 
 ```bash 
 kubectl exec postgresql-cluster-1 -it -- /bin/bash # enter the primary database node

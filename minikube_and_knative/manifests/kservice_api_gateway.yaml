@@ -17,6 +17,11 @@ spec:
               configMapKeyRef:
                 name: configmap-gateway-endpoint-routing
                 key: is_it_prime__v1
+          - name: POSTGRESQL__QUERY__V1 
+            valueFrom:
+              configMapKeyRef:
+                name: configmap-gateway-endpoint-routing
+                key: postgresql__query__v1 
         ports:
         - containerPort: 80
           protocol: TCP
