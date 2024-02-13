@@ -18,7 +18,7 @@ def query():
     db_name: str = user_input_json["db_name"]
     query_string: str = user_input_json["query_string"]
     with psycopg.connect(
-        f"host='postgresql-cluster-rw.default.svc.cluster.local' port=5432 dbname='{db_name}' user='db_admin' password='password1234' connect_timeout=10",
+        f"host='postgresql-cluster-rw.postgresql.svc.cluster.local' port=5432 dbname='{db_name}' user='db_admin' password='password1234' connect_timeout=10",
         autocommit=True,
     ) as conn:
         with conn.cursor() as cur:
