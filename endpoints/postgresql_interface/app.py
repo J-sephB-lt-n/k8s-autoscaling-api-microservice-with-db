@@ -27,17 +27,17 @@ def query():
                 results = cur.fetchall()
             except psycopg.ProgrammingError:
                 results = None
-        return flask.Response(
-            json.dumps(
-                {
-                    "results": results,
-                    "description": None
-                    if cur.description is None
-                    else [str(x) for x in cur.description],
-                    "statusmessage": cur.statusmessage,
-                    "rowcount": cur.rowcount,
-                }
-            ),
-            status=200,
-        )
+            return flask.Response(
+                json.dumps(
+                    {
+                        "results": results,
+                        "description": None
+                        if cur.description is None
+                        else [str(x) for x in cur.description],
+                        "statusmessage": cur.statusmessage,
+                        "rowcount": cur.rowcount,
+                    }
+                ),
+                status=200,
+            )
     return flask.Response("BAD REQUEST", status=400)

@@ -79,9 +79,9 @@ kubectl get deployments -n cnpg-system --watch
 kubectl create namespace postgresql
 kubectl apply -f minikube_and_knative/manifests/secret_postgresql_cluster.yaml
 kubectl apply -f minikube_and_knative/manifests/cluster_postgresql.yaml
-kubectl get cluster --watch
-kubectl get pod --watch
-kubectl get service
+kubectl get cluster --namespace postgresql --watch
+kubectl get pod --namespace postgresql --watch
+kubectl get service --namespace postgresql
 ```
 
 ```bash
