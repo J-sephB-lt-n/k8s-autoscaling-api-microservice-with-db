@@ -1,0 +1,34 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cluster-cloudnative-postgresql
+  namespace: cloudnative-postgresql
+spec:
+  description: "PostGreSQL cluster managed by CloudNative-PG Operator"
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgis:15-3.3
+  bootstrap:
+    initdb:
+      database: postgres
+      owner: postgres
+      secret:
+        name: cluster-cnpg-app-user
+      postInitTemplateSQL:
+        - CREATE EXTENSION postgis;
+        - CREATE EXTENSION postgis_topology;
+        - CREATE EXTENSION fuzzystrmatch;
+        - CREATE EXTENSION postgis_tiger_geocoder;
+  storage:
+    size: 1Gi
+    storageClass: standard
+  backup:
+    barmanObjectStore:
+      destinationPath: "gs://cloudnative-postgresql-backups/cluster-cloudnative-postgresql"
+      googleCredentials:
+        gkeEnvironment: true
+  serviceAccountTemplate:
+    metadata:
+      annotations:
+        iam.gke.io/gcp-service-account: cnpg@<project>.iam.gserviceaccount.com
+  monitoring:
+    enablePodMonitor: true
